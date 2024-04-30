@@ -1,0 +1,35 @@
+name: Update Contributors
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Runs at 9 AM IST every day
+
+jobs:
+  update_readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: main
+
+      - name: Get Contributor Count
+        id: contributors
+        run: |
+          CONTRIBUTORS=$(curl -s https://api.github.com/repos/EurydiceCorp/enum/contributors | jq '. | length')
+          echo "CONTRIBUTORS=$CONTRIBUTORS" >> $GITHUB_ENV
+
+      - name: Update README
+        run: |
+          CONTRIBUTORS="${{ env.CONTRIBUTORS }}"
+          sed -i "s/\[!\[Contributors\].*//g" README.md
+          echo "[![Contributors](https://img.shields.io/badge/Contributors-$CONTRIBUTORS-brightgreen)](https://github.com/EurydiceCorp/enum/graphs/contributors)" >> README.md
+
+      - name: Commit changes
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add README.md
+          git commit -m "Update README with contributor count badge"
+          git push
